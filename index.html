@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор сайтов</title>
+</head>
+<body>
+    <h1>🚀 Создай свой сайт!</h1>
+
+    <h2>Вход</h2>
+    <input type="text" id="username" placeholder="Логин">
+    <input type="password" id="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+    <button onclick="register()">Регистрация</button>
+
+    <h2>Создание проекта</h2>
+    <input type="text" id="projectName" placeholder="Имя проекта">
+    <textarea id="projectContent" placeholder="HTML-код"></textarea>
+    <button onclick="saveProject()">💾 Сохранить</button>
+
+    <h2>Мои проекты</h2>
+    <div id="projectsList"></div>
+
+    <script>
+        let token = localStorage.getItem("token");
+        let userId = localStorage.getItem("userId");
+
+        async function register() {
+            let username = document.getElementById('username').value;
+            let password = document.getElementById('password').value;
+            let res = await fetch('/register', { method: 'POST', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+            alert(await res.json().message);
+        }
+
+        async function login() {
+            let username = document.getElementById('username').value;
+            let password = document.getElementById('password').value;
+            let res = await fetch('/login', { method: 'POST', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
+            let data = await res.json();
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+                alert("Успешный вход!");
+            } else {
+                alert("Ошибка входа!");
+            }
+        }
+
+        async function saveProject() {
+            let name = document.getElementById('projectName').value;
+            let content = document.getElementById('projectContent').value;
+            let res = await fetch('/projects', { method: 'POST', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, name, content }) });
+            alert(await res.json().message);
+            loadProjects();
+        }
+
+        async function loadProjects() {
+            let res = await fetch(`/projects/${userId}`);
+            let projects = await res.json();
+            let html = projects.map(p => `<div><h3>${p.name}</h3><button onclick="editProject(${p.id})">✏️ Редактировать</button></div>`).join("");
+            document.getElementById('projectsList').innerHTML = html;
+        }
+
+        function editProject(id) {
+            let content = prompt("Редактировать код:");
+            fetch(`/projects/${id}`, { method: 'PUT', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) });
+            alert("Проект обновлён!");
+        }
+
+        if (userId) loadProjects();
+    </script>
+</body>
+</html>
