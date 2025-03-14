@@ -88,20 +88,33 @@ def create():
     return render_template('create.html')
 
 # Редактирование проекта
+import os
+
 @app.route('/edit/<int:project_id>', methods=['GET', 'POST'])
 def edit(project_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
     db = get_db()
     project = db.execute("SELECT * FROM projects WHERE id = ? AND user_id = ?", (project_id, session['user_id'])).fetchone()
     if not project:
-        return "Проект не найден!"
+        flash('Проект не найден!', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Проверяем, существует ли edit.html
+    template_path = os.path.join(os.getcwd(), 'templates', 'edit.html')
+    print(f"Checking for template: {template_path}")
+    print(f"File exists: {os.path.exists(template_path)}")
+
     if request.method == 'POST':
         content = request.form['content']
         db.execute("UPDATE projects SET content = ? WHERE id = ?", (content, project_id))
         db.commit()
+        flash('Проект обновлён!', 'success')
         return redirect(url_for('dashboard'))
+    
     return render_template('edit.html', project=project)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
